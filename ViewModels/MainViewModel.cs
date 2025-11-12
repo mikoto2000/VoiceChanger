@@ -55,6 +55,7 @@ namespace VoiceChanger.ViewModels
         public ICommand StopCommand { get; }
         public ICommand SavePresetCommand { get; }
         public ICommand LoadPresetCommand { get; }
+        public ICommand ApplyMoeVoiceCommand { get; }
 
         public MainViewModel()
         {
@@ -75,6 +76,7 @@ namespace VoiceChanger.ViewModels
                 var preset = await PresetService.LoadAsync(path);
                 if (preset != null) ApplyPreset(preset);
             });
+            ApplyMoeVoiceCommand = new RelayCommand(_ => ApplyPreset(GetMoeVoicePreset()));
 
             _engine.Started += () => { IsRunning = true; CommandManager.InvalidateRequerySuggested(); };
             _engine.Stopped += () => { IsRunning = false; CommandManager.InvalidateRequerySuggested(); };
@@ -145,6 +147,23 @@ namespace VoiceChanger.ViewModels
             GateRelease = p.GateRelease;
             OutputGain = p.OutputGain;
         }
+
+        private Preset GetMoeVoicePreset() => new Preset
+        {
+            // Light high-pitched, bright tone with minimal echo
+            InputGain = 1.05f,
+            PitchSemitones = 5.0f,
+            FormantShift = 0.25f,
+            EqLowDb = -6.0f,
+            EqMidDb = -1.5f,
+            EqHighDb = 5.0f,
+            EchoMs = 60,
+            EchoFeedback = 0.12f,
+            EchoMix = 0.08f,
+            GateThreshold = 0.004f,
+            GateRelease = 0.12f,
+            OutputGain = 1.1f
+        };
     }
 
     public class RelayCommand : ICommand
