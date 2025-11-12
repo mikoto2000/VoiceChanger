@@ -46,7 +46,8 @@ namespace VoiceChanger.Audio
                           int echoMs, float echoFb, float echoMix, float gateThresh, float gateRelease, float gainOut)
         {
             Stop();
-            _capture = new WasapiCapture(input, false, latencyMs);
+            // Use event-driven WASAPI to reduce glitches
+            _capture = new WasapiCapture(input, true, latencyMs);
             _bufferedInput = new BufferedWaveProvider(_capture.WaveFormat)
             {
                 DiscardOnBufferOverflow = true,
@@ -95,8 +96,28 @@ namespace VoiceChanger.Audio
                 new TapEffect(_waveTap)
             });
 
+            // Adapt to output device mix format (rate/channels) to avoid resample mismatches that cause crackling
+            var mix = output.AudioClient.MixFormat;
+            if (_sampleChain.WaveFormat.SampleRate != mix.SampleRate)
+            {
+                _sampleChain = new WdlResamplingSampleProvider(_sampleChain, mix.SampleRate);
+            }
+            if (_sampleChain.WaveFormat.Channels != mix.Channels)
+            {
+                if (_sampleChain.WaveFormat.Channels == 1 && mix.Channels == 2)
+                {
+                    _sampleChain = new MonoToStereoSampleProvider(_sampleChain);
+                }
+                else if (_sampleChain.WaveFormat.Channels == 2 && mix.Channels == 1)
+                {
+                    var st2m = new StereoToMonoSampleProvider(_sampleChain) { LeftVolume = 0.5f, RightVolume = 0.5f };
+                    _sampleChain = st2m;
+                }
+                // Other channel counts are uncommon for voice; if encountered, WASAPI may still accept downmixing via OS.
+            }
+
             IWaveProvider outProvider = _sampleChain.ToWaveProvider();
-            _output = new WasapiOut(output, AudioClientShareMode.Shared, false, latencyMs);
+            _output = new WasapiOut(output, AudioClientShareMode.Shared, true, latencyMs);
             _output.Init(outProvider);
             _capture.StartRecording();
             _output.Play();
