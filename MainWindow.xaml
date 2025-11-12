@@ -27,15 +27,15 @@
             <TextBlock Text="Output Device" FontWeight="Bold" Margin="0,8,0,0"/>
             <ComboBox ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding SelectedOutput}"
                       DisplayMemberPath="FriendlyName"/>
-            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <StackPanel Orientation="Vertical" Margin="0,12,0,0">
                 <Button Content="Start" Width="100" Command="{Binding StartCommand}"/>
-                <Button Content="Stop" Width="100" Margin="8,0,0,0" Command="{Binding StopCommand}"/>
+                <Button Content="Stop" Width="100" Margin="0,8,0,0" Command="{Binding StopCommand}"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <StackPanel Orientation="Vertical" Margin="0,8,0,0">
                 <Button Content="Refresh" Width="100" Command="{Binding RefreshDevicesCommand}"/>
-                <Button Content="Save Preset" Width="100" Margin="8,0,0,0" Command="{Binding SavePresetCommand}"/>
-                <Button Content="Load Preset" Width="100" Margin="8,0,0,0" Command="{Binding LoadPresetCommand}"/>
-                <Button Content="Moe Voice" Width="100" Margin="8,0,0,0" Command="{Binding ApplyMoeVoiceCommand}"/>
+                <Button Content="Save Preset" Width="100" Margin="0,8,0,0" Command="{Binding SavePresetCommand}"/>
+                <Button Content="Load Preset" Width="100" Margin="0,8,0,0" Command="{Binding LoadPresetCommand}"/>
+                <Button Content="Moe Voice" Width="100" Margin="0,8,0,0" Command="{Binding ApplyMoeVoiceCommand}"/>
             </StackPanel>
         </StackPanel>
 
