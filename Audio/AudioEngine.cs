@@ -17,7 +17,7 @@ namespace VoiceChanger.Audio
         private ISampleProvider? _sampleChain;
         private EffectChain? _effectChain;
         private readonly GainEffect _gainIn = new();
-        private readonly PitchShiftEffect _pitch = new();
+        private readonly SoundTouchPitchEffect _pitch = new();
         private readonly FormantShiftEffect _formant = new();
         private readonly Eq3BandEffect _eq = new();
         private readonly EchoEffect _echo = new();
@@ -64,7 +64,7 @@ namespace VoiceChanger.Audio
             _sampleChain = _effectChain;
 
             _gainIn.Gain = gainIn;
-            _pitch.Configure(_capture.WaveFormat.SampleRate, 2048, 8);
+            _pitch.Configure(_capture.WaveFormat.SampleRate, _capture.WaveFormat.Channels);
             _pitch.SetSemitones(semitones);
             _formant.Configure(_capture.WaveFormat.SampleRate);
             _formant.SetShift(formant);
