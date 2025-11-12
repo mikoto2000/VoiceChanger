@@ -49,8 +49,18 @@ namespace VoiceChanger.Audio
             _capture = new WasapiCapture(input, false, latencyMs);
             _bufferedInput = new BufferedWaveProvider(_capture.WaveFormat)
             {
-                DiscardOnBufferOverflow = true
+                DiscardOnBufferOverflow = true,
+                ReadFully = true
             };
+            // Increase buffer length to ~200ms to reduce underruns
+            try
+            {
+                int desired = Math.Max(1, _capture.WaveFormat.AverageBytesPerSecond / 5);
+                int align = Math.Max(1, _capture.WaveFormat.BlockAlign);
+                desired -= desired % align;
+                _bufferedInput.BufferLength = desired;
+            }
+            catch { }
             _capture.DataAvailable += (s, e) =>
             {
                 _bufferedInput.AddSamples(e.Buffer, 0, e.BytesRecorded);
@@ -155,6 +165,7 @@ namespace VoiceChanger.Audio
         {
             private readonly BufferedWaveProvider _provider;
             public WaveFormat WaveFormat { get; }
+            private byte[] _temp = Array.Empty<byte>();
 
             public WaveBufferToSampleProvider(BufferedWaveProvider provider)
             {
@@ -164,11 +175,14 @@ namespace VoiceChanger.Audio
 
             public int Read(float[] buffer, int offset, int count)
             {
-                var bytesNeeded = count * sizeof(float);
-                var temp = new byte[bytesNeeded];
-                int bytes = _provider.Read(temp, 0, bytesNeeded);
+                int bytesNeeded = count * sizeof(float);
+                if (_temp.Length < bytesNeeded)
+                {
+                    Array.Resize(ref _temp, bytesNeeded);
+                }
+                int bytes = _provider.Read(_temp, 0, bytesNeeded);
                 int samples = bytes / sizeof(float);
-                var wb = new WaveBuffer(temp);
+                var wb = new WaveBuffer(_temp);
                 for (int i = 0; i < samples; i++) buffer[offset + i] = wb.FloatBuffer[i];
                 return samples;
             }
