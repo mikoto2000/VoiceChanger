@@ -4,8 +4,9 @@ namespace VoiceChanger.DSP.Effects
 {
     public class NoiseGateEffect : IEffect
     {
-        private volatile float _threshold = 0.01f;
-        private volatile float _release = 0.05f;
+        private volatile float _threshold = 0.003f;
+        private volatile float _release = 0.1f;
+        private volatile float _floor = 0.2f; // attenuation when below threshold
         private float _env;
 
         public void Configure(float threshold, float release)
@@ -23,10 +24,10 @@ namespace VoiceChanger.DSP.Effects
                 _env = Math.Max(Math.Abs(x), _env - _release);
                 if (_env < _threshold)
                 {
-                    buffer[i] = 0f;
+                    // Soft gate: attenuate instead of hard mute to avoid choppiness
+                    buffer[i] = x * _floor;
                 }
             }
         }
     }
 }
-

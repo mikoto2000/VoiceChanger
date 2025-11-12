@@ -40,13 +40,13 @@ namespace VoiceChanger.ViewModels
         public int EchoMs { get => _echoMs; set { SetProperty(ref _echoMs, value); Apply(); } }
         private int _echoMs = 150;
         public float EchoFeedback { get => _echoFb; set { SetProperty(ref _echoFb, value); Apply(); } }
-        private float _echoFb = 0.3f;
+        private float _echoFb = 0.25f;
         public float EchoMix { get => _echoMix; set { SetProperty(ref _echoMix, value); Apply(); } }
-        private float _echoMix = 0.2f;
+        private float _echoMix = 0.0f; // default off to avoid metallic coloration
         public float GateThreshold { get => _gateTh; set { SetProperty(ref _gateTh, value); Apply(); } }
-        private float _gateTh = 0.01f;
+        private float _gateTh = 0.003f;
         public float GateRelease { get => _gateRel; set { SetProperty(ref _gateRel, value); Apply(); } }
-        private float _gateRel = 0.05f;
+        private float _gateRel = 0.1f;
         public float OutputGain { get => _outGain; set { SetProperty(ref _outGain, value); Apply(); } }
         private float _outGain = 1.0f;
 
@@ -158,4 +158,3 @@ namespace VoiceChanger.ViewModels
         public event EventHandler? CanExecuteChanged { add { } remove { } }
     }
 }
-
