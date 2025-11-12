@@ -23,6 +23,7 @@ namespace VoiceChanger.Audio
         private readonly EchoEffect _echo = new();
         private readonly NoiseGateEffect _gate = new();
         private readonly GainEffect _gainOut = new();
+        private readonly SoftClipEffect _softClip = new();
 
         private readonly ConcurrentQueue<float> _waveTap = new();
 
@@ -83,6 +84,7 @@ namespace VoiceChanger.Audio
             _echo.Configure(_capture.WaveFormat.SampleRate, _capture.WaveFormat.Channels, echoMs, echoFb, echoMix);
             _gate.Configure(gateThresh, gateRelease);
             _gainOut.Gain = gainOut;
+            _softClip.Amount = 0.6f; // moderate default soft clipping
 
             _effectChain.SetEffects(new IEffect[]
             {
@@ -93,6 +95,7 @@ namespace VoiceChanger.Audio
                 _eq,
                 _echo,
                 _gainOut,
+                _softClip,
                 new TapEffect(_waveTap)
             });
 
