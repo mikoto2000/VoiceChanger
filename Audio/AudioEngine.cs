@@ -17,26 +17,17 @@ namespace VoiceChanger.Audio
         private ISampleProvider? _sampleChain;
         private EffectChain? _effectChain;
         private readonly GainEffect _gainIn = new();
-        private readonly PreTapEffect _preTap = new();
         private readonly SoundTouchPitchEffect _pitch = new();
         private readonly FormantShiftEffect _formant = new();
         private readonly Eq3BandEffect _eq = new();
         private readonly EchoEffect _echo = new();
         private readonly NoiseGateEffect _gate = new();
-        private readonly SibilantPreserveEffect _sibilant;
-        private readonly TransientDryBoostEffect _transient;
         private readonly GainEffect _gainOut = new();
 
         private readonly ConcurrentQueue<float> _waveTap = new();
 
         public event Action? Started;
         public event Action? Stopped;
-
-        public AudioEngine()
-        {
-            _sibilant = new SibilantPreserveEffect(_preTap);
-            _transient = new TransientDryBoostEffect(_preTap);
-        }
 
         public MMDevice[] GetInputDevices()
         {
@@ -52,8 +43,7 @@ namespace VoiceChanger.Audio
 
         public void Start(MMDevice input, MMDevice output, int latencyMs,
                           float gainIn, float semitones, float formant, float eqLow, float eqMid, float eqHigh,
-                          int echoMs, float echoFb, float echoMix, float gateThresh, float gateRelease, float gainOut,
-                          float sibilantMix = 0.15f, float transientMix = 0.25f, float transientSensitivity = 0.2f)
+                          int echoMs, float echoFb, float echoMix, float gateThresh, float gateRelease, float gainOut)
         {
             Stop();
             _capture = new WasapiCapture(input, false, latencyMs);
@@ -81,21 +71,15 @@ namespace VoiceChanger.Audio
             _eq.Update(_capture.WaveFormat.SampleRate, eqLow, eqMid, eqHigh);
             _echo.Configure(_capture.WaveFormat.SampleRate, _capture.WaveFormat.Channels, echoMs, echoFb, echoMix);
             _gate.Configure(gateThresh, gateRelease);
-            _sibilant.Configure(_capture.WaveFormat.SampleRate);
-            _sibilant.SetMix(sibilantMix);
-            _transient.Configure(transientMix, transientSensitivity);
             _gainOut.Gain = gainOut;
 
             _effectChain.SetEffects(new IEffect[]
             {
-                _preTap,
                 _gate,
                 _gainIn,
                 _pitch,
                 _formant,
                 _eq,
-                _sibilant,
-                _transient,
                 _echo,
                 _gainOut,
                 new TapEffect(_waveTap)

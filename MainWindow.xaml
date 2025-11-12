@@ -70,14 +70,6 @@
 
                 <TextBlock Text="Output Gain" Margin="0,8,0,0"/>
                 <Slider Minimum="0" Maximum="4" Value="{Binding OutputGain}" TickFrequency="0.1" IsSnapToTickEnabled="True"/>
-
-                <TextBlock Text="Sibilant Preserve Mix" Margin="0,8,0,0"/>
-                <Slider Minimum="0" Maximum="0.5" Value="{Binding SibilantMix}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
-
-                <TextBlock Text="Transient Dry Mix" Margin="0,8,0,0"/>
-                <Slider Minimum="0" Maximum="0.7" Value="{Binding TransientMix}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
-                <TextBlock Text="Transient Sensitivity"/>
-                <Slider Minimum="0.05" Maximum="1" Value="{Binding TransientSensitivity}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
             </StackPanel>
         </ScrollViewer>
 
@@ -86,3 +78,4 @@
         </Border>
     </Grid>
 </Window>
+
