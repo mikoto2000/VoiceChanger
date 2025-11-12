@@ -76,8 +76,8 @@ namespace VoiceChanger.ViewModels
                 if (preset != null) ApplyPreset(preset);
             });
 
-            _engine.Started += () => IsRunning = true;
-            _engine.Stopped += () => IsRunning = false;
+            _engine.Started += () => { IsRunning = true; CommandManager.InvalidateRequerySuggested(); };
+            _engine.Stopped += () => { IsRunning = false; CommandManager.InvalidateRequerySuggested(); };
 
             RefreshDevices();
         }
@@ -155,6 +155,10 @@ namespace VoiceChanger.ViewModels
         { _execute = execute; _canExecute = canExecute; }
         public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
         public void Execute(object? parameter) => _execute(parameter);
-        public event EventHandler? CanExecuteChanged { add { } remove { } }
+        public event EventHandler? CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
     }
 }
