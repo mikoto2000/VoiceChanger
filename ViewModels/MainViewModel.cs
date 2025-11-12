@@ -49,6 +49,12 @@ namespace VoiceChanger.ViewModels
         private float _gateRel = 0.1f;
         public float OutputGain { get => _outGain; set { SetProperty(ref _outGain, value); Apply(); } }
         private float _outGain = 1.0f;
+        public float SibilantMix { get => _sibMix; set { SetProperty(ref _sibMix, value); Apply(); } }
+        private float _sibMix = 0.15f;
+        public float TransientMix { get => _trMix; set { SetProperty(ref _trMix, value); Apply(); } }
+        private float _trMix = 0.25f;
+        public float TransientSensitivity { get => _trSens; set { SetProperty(ref _trSens, value); Apply(); } }
+        private float _trSens = 0.2f;
 
         public ICommand RefreshDevicesCommand { get; }
         public ICommand StartCommand { get; }
@@ -99,7 +105,8 @@ namespace VoiceChanger.ViewModels
                 InputGain, PitchSemitones, FormantShift,
                 EqLowDb, EqMidDb, EqHighDb,
                 EchoMs, EchoFeedback, EchoMix,
-                GateThreshold, GateRelease, OutputGain);
+                GateThreshold, GateRelease, OutputGain,
+                SibilantMix, TransientMix, TransientSensitivity);
         }
 
         public void Stop() => _engine.Stop();
@@ -110,6 +117,7 @@ namespace VoiceChanger.ViewModels
                 EqLowDb, EqMidDb, EqHighDb,
                 EchoMs, EchoFeedback, EchoMix,
                 GateThreshold, GateRelease, OutputGain);
+            // Note: sibilant/transient parameters are applied on Start; if needed live updates can be added to engine.
         }
 
         public bool TryGetWaveform(int max, out float[] samples) => _engine.TryDequeueWaveform(max, out samples);

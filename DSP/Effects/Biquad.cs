@@ -66,6 +66,40 @@ namespace VoiceChanger.DSP.Effects
             NormalizeAndSet(b0, b1, b2, a0, a1, a2);
         }
 
+        public void SetLowpass(float sampleRate, float cutoffHz, float q)
+        {
+            float w0 = 2 * (float)Math.PI * (cutoffHz / sampleRate);
+            float cosw0 = (float)Math.Cos(w0);
+            float sinw0 = (float)Math.Sin(w0);
+            float alpha = sinw0 / (2 * q);
+
+            float b0 = (1 - cosw0) / 2;
+            float b1 = 1 - cosw0;
+            float b2 = (1 - cosw0) / 2;
+            float a0 = 1 + alpha;
+            float a1 = -2 * cosw0;
+            float a2 = 1 - alpha;
+
+            NormalizeAndSet(b0, b1, b2, a0, a1, a2);
+        }
+
+        public void SetHighpass(float sampleRate, float cutoffHz, float q)
+        {
+            float w0 = 2 * (float)Math.PI * (cutoffHz / sampleRate);
+            float cosw0 = (float)Math.Cos(w0);
+            float sinw0 = (float)Math.Sin(w0);
+            float alpha = sinw0 / (2 * q);
+
+            float b0 = (1 + cosw0) / 2;
+            float b1 = -(1 + cosw0);
+            float b2 = (1 + cosw0) / 2;
+            float a0 = 1 + alpha;
+            float a1 = -2 * cosw0;
+            float a2 = 1 - alpha;
+
+            NormalizeAndSet(b0, b1, b2, a0, a1, a2);
+        }
+
         private void NormalizeAndSet(float b0, float b1, float b2, float a0, float a1, float a2)
         {
             _b0 = b0 / a0;
