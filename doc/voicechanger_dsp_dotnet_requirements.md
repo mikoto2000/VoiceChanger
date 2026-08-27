@@ -69,7 +69,7 @@ OBSやDiscordなどから仮想マイクとして利用できることを目指�
 | 項目 | 内容 |
 |------|------|
 | 対応OS | Windows 10 / 11 |
-| 言語 | C# (.NET 8.0) |
+| 言語 | C# (.NET 10.0) |
 | GUI | WPF |
 | 音声API | WASAPI / NAudio |
 | レイテンシ | 100ms以下 |
@@ -149,7 +149,7 @@ OBSやDiscordなどから仮想マイクとして利用できることを目指�
 ---
 
 ## 10. 納品物
-- Visual Studio / Rider でビルド可能な `.NET 8.0` プロジェクト一式  
+- Visual Studio / Rider でビルド可能な `.NET 10.0` プロジェクト一式
 - DSPモジュールを単体テスト可能な状態  
 - WPF GUI付き実行可能バイナリ（Releaseビルド）  
 - README.md（動作方法／設定方法記載）  

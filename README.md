@@ -1,11 +1,11 @@
-VoiceChanger (.NET 8 / WPF)
+VoiceChanger (.NET 10 / WPF)
 
 - Real-time voice changer for Windows using NAudio.
 - Effects: pitch shift, formant shaping, 3‑band EQ, echo, noise gate, gain.
 - WASAPI input/output with device selection and waveform monitor.
 
 Build
-- Requirements: .NET 8 SDK, Windows 10/11.
+- Requirements: .NET 10 SDK, Windows 10/11.
 - Open `VoiceChanger.sln` in Visual Studio or run: `dotnet build`.
 - NuGet: restores `NAudio` automatically.
 

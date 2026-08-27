@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using NAudio.Wave;
 
@@ -23,16 +24,26 @@ namespace VoiceChanger.DSP
             _effects.AddRange(effects);
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            var read = _source.Read(buffer, offset, count);
+            int read = _source.Read(buffer);
             if (read <= 0) return read;
-            foreach (var effect in _effects)
+
+            float[] rented = ArrayPool<float>.Shared.Rent(read);
+            try
             {
-                effect.Process(buffer, offset, read, WaveFormat.Channels);
+                buffer[..read].CopyTo(rented);
+                foreach (var effect in _effects)
+                {
+                    effect.Process(rented, 0, read, WaveFormat.Channels);
+                }
+                rented.AsSpan(0, read).CopyTo(buffer);
+            }
+            finally
+            {
+                ArrayPool<float>.Shared.Return(rented);
             }
             return read;
         }
     }
 }
-

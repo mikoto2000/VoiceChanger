@@ -97,11 +97,23 @@ namespace VoiceChanger.ViewModels
         public void Start()
         {
             if (SelectedInput == null || SelectedOutput == null) return;
-            _engine.Start(SelectedInput, SelectedOutput, 60,
-                InputGain, PitchSemitones, FormantShift,
-                EqLowDb, EqMidDb, EqHighDb,
-                EchoMs, EchoFeedback, EchoMix,
-                GateThreshold, GateRelease, OutputGain);
+            try
+            {
+                _engine.Start(SelectedInput, SelectedOutput, 60,
+                    InputGain, PitchSemitones, FormantShift,
+                    EqLowDb, EqMidDb, EqHighDb,
+                    EchoMs, EchoFeedback, EchoMix,
+                    GateThreshold, GateRelease, OutputGain);
+            }
+            catch (Exception ex)
+            {
+                _engine.Stop();
+                System.Windows.MessageBox.Show(
+                    $"音声デバイスを開始できませんでした。\n\n{ex.Message}",
+                    "Voice Changer",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
         }
 
         public void Stop() => _engine.Stop();

@@ -11,8 +11,8 @@ namespace VoiceChanger.Audio
 {
     public class AudioEngine : IDisposable
     {
-        private WasapiCapture? _capture;
-        private WasapiOut? _output;
+        private WasapiRecorder? _capture;
+        private WasapiPlayer? _output;
         private BufferedWaveProvider? _bufferedInput;
         private ISampleProvider? _sampleChain;
         private EffectChain? _effectChain;
@@ -48,29 +48,23 @@ namespace VoiceChanger.Audio
         {
             Stop();
             // Use event-driven WASAPI to reduce glitches
-            _capture = new WasapiCapture(input, true, latencyMs);
-            _bufferedInput = new BufferedWaveProvider(_capture.WaveFormat)
+            _capture = new WasapiRecorderBuilder()
+                .WithDevice(input)
+                .WithSharedMode()
+                .WithEventSync()
+                .WithBufferLength(latencyMs)
+                .Build();
+            _bufferedInput = new BufferedWaveProvider(_capture.WaveFormat, TimeSpan.FromMilliseconds(200))
             {
                 DiscardOnBufferOverflow = true,
                 ReadFully = true
             };
-            // Increase buffer length to ~200ms to reduce underruns
-            try
+            _capture.DataAvailable += (data, _, _, _) =>
             {
-                int desired = Math.Max(1, _capture.WaveFormat.AverageBytesPerSecond / 5);
-                int align = Math.Max(1, _capture.WaveFormat.BlockAlign);
-                desired -= desired % align;
-                _bufferedInput.BufferLength = desired;
-            }
-            catch { }
-            _capture.DataAvailable += (s, e) =>
-            {
-                _bufferedInput.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                _bufferedInput.AddSamples(data);
             };
 
-            ISampleProvider inputSamples = _capture.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat
-                ? new WaveBufferToSampleProvider(_bufferedInput)
-                : new WaveToSampleProvider(_bufferedInput);
+            ISampleProvider inputSamples = _bufferedInput.ToSampleProvider();
 
             _effectChain = new EffectChain(inputSamples);
             _sampleChain = _effectChain;
@@ -100,7 +94,8 @@ namespace VoiceChanger.Audio
             });
 
             // Adapt to output device mix format (rate/channels) to avoid resample mismatches that cause crackling
-            var mix = output.AudioClient.MixFormat;
+            using var outputAudioClient = output.CreateAudioClient();
+            var mix = outputAudioClient.MixFormat;
             if (_sampleChain.WaveFormat.SampleRate != mix.SampleRate)
             {
                 _sampleChain = new WdlResamplingSampleProvider(_sampleChain, mix.SampleRate);
@@ -120,7 +115,12 @@ namespace VoiceChanger.Audio
             }
 
             IWaveProvider outProvider = _sampleChain.ToWaveProvider();
-            _output = new WasapiOut(output, AudioClientShareMode.Shared, true, latencyMs);
+            _output = new WasapiPlayerBuilder()
+                .WithDevice(output)
+                .WithSharedMode()
+                .WithEventSync()
+                .WithLatency(latencyMs)
+                .Build();
             _output.Init(outProvider);
             _capture.StartRecording();
             _output.Play();
@@ -183,33 +183,6 @@ namespace VoiceChanger.Audio
         public void Dispose()
         {
             Stop();
-        }
-
-        private sealed class WaveBufferToSampleProvider : ISampleProvider
-        {
-            private readonly BufferedWaveProvider _provider;
-            public WaveFormat WaveFormat { get; }
-            private byte[] _temp = Array.Empty<byte>();
-
-            public WaveBufferToSampleProvider(BufferedWaveProvider provider)
-            {
-                _provider = provider;
-                WaveFormat = provider.WaveFormat;
-            }
-
-            public int Read(float[] buffer, int offset, int count)
-            {
-                int bytesNeeded = count * sizeof(float);
-                if (_temp.Length < bytesNeeded)
-                {
-                    Array.Resize(ref _temp, bytesNeeded);
-                }
-                int bytes = _provider.Read(_temp, 0, bytesNeeded);
-                int samples = bytes / sizeof(float);
-                var wb = new WaveBuffer(_temp);
-                for (int i = 0; i < samples; i++) buffer[offset + i] = wb.FloatBuffer[i];
-                return samples;
-            }
         }
 
         private sealed class TapEffect : IEffect
