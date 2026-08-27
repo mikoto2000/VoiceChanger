@@ -150,19 +150,19 @@ namespace VoiceChanger.ViewModels
 
         private Preset GetMoeVoicePreset() => new Preset
         {
-            // Light high-pitched, bright tone with minimal echo
-            InputGain = 1.05f,
-            PitchSemitones = 5.0f,
-            FormantShift = 0.25f,
-            EqLowDb = -6.0f,
-            EqMidDb = -1.5f,
-            EqHighDb = 5.0f,
+            // Moderate pitch plus formant/EQ shaping sounds younger without becoming robotic.
+            InputGain = 1.0f,
+            PitchSemitones = 3.0f,
+            FormantShift = 0.5f,
+            EqLowDb = -4.0f,
+            EqMidDb = 1.5f,
+            EqHighDb = 3.0f,
             EchoMs = 60,
-            EchoFeedback = 0.12f,
-            EchoMix = 0.08f,
-            GateThreshold = 0.004f,
-            GateRelease = 0.12f,
-            OutputGain = 1.1f
+            EchoFeedback = 0.0f,
+            EchoMix = 0.0f,
+            GateThreshold = 0.003f,
+            GateRelease = 0.18f,
+            OutputGain = 1.0f
         };
     }
 
