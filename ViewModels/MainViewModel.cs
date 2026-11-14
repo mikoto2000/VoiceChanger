@@ -162,18 +162,18 @@ namespace VoiceChanger.ViewModels
 
         private Preset GetMoeVoicePreset() => new Preset
         {
-            // Moderate pitch plus formant/EQ shaping sounds younger without becoming robotic.
+            // Keep pitch subtle; create the younger character mostly with formant and EQ.
             InputGain = 1.0f,
-            PitchSemitones = 3.0f,
-            FormantShift = 0.5f,
-            EqLowDb = -4.0f,
-            EqMidDb = 1.5f,
-            EqHighDb = 3.0f,
+            PitchSemitones = 1.5f,
+            FormantShift = 0.45f,
+            EqLowDb = -3.0f,
+            EqMidDb = 1.0f,
+            EqHighDb = 2.5f,
             EchoMs = 60,
             EchoFeedback = 0.0f,
             EchoMix = 0.0f,
-            GateThreshold = 0.003f,
-            GateRelease = 0.18f,
+            GateThreshold = 0.0015f,
+            GateRelease = 0.25f,
             OutputGain = 1.0f
         };
     }

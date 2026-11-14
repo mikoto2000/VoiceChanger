@@ -19,4 +19,4 @@ Notes
 - For virtual microphone, install VB-Audio Cable or VoiceMeeter and select as output.
 - Latency is configured ~60 ms. Lower values may crackle depending on hardware.
 - Pitch shifting uses streaming SoundTouch processing with an SMB fallback; formant is an approximated vocal filter.
-- For a natural high voice, keep pitch around +2 to +4 semitones and use formant/EQ shaping instead of a large pitch shift.
+- For a natural high voice, keep pitch around +1 to +2 semitones and use formant/EQ shaping instead of a large pitch shift.

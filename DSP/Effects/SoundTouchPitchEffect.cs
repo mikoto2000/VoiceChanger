@@ -14,10 +14,13 @@ namespace VoiceChanger.DSP.Effects
         private MethodInfo? _putSamples;
         private MethodInfo? _receiveSamples;
         private MethodInfo? _arrayToPtr;
+        private MethodInfo? _setSetting;
+        private Type? _settingIdType;
 
-        private readonly PitchShiftEffect _fallback = new();
         private readonly Queue<float> _output = new();
         private int _channels = 1;
+        private int _prebufferSamples;
+        private bool _outputPrimed;
         private float _targetSemitones;
         private float _currentSemitones;
         private float[] _input = Array.Empty<float>();
@@ -26,18 +29,20 @@ namespace VoiceChanger.DSP.Effects
         public void Configure(float sampleRate, int channels)
         {
             _channels = Math.Max(1, channels);
+            _prebufferSamples = Math.Max(_channels * 2048,
+                (int)(sampleRate * _channels * 0.06f));
             _output.Clear();
+            _outputPrimed = false;
 
             if (!TryInitSoundTouch())
             {
-                _fallback.Configure(sampleRate, 4096, 16);
-                _fallback.SetSemitones(_targetSemitones);
                 return;
             }
 
             Invoke("SetSampleRate", (int)sampleRate);
             Invoke("SetChannels", _channels);
             Invoke("Clear");
+            ConfigureForVoice();
             SetSoundTouchPitch(_targetSemitones);
             _currentSemitones = _targetSemitones;
         }
@@ -45,7 +50,6 @@ namespace VoiceChanger.DSP.Effects
         public void SetSemitones(float semitones)
         {
             _targetSemitones = Math.Clamp(semitones, -12f, 12f);
-            if (_soundTouch == null) _fallback.SetSemitones(_targetSemitones);
         }
 
         public void Process(float[] buffer, int offset, int count, int channels)
@@ -53,7 +57,7 @@ namespace VoiceChanger.DSP.Effects
             if (count <= 0) return;
             if (_soundTouch == null || _arrayToPtr == null || _putSamples == null || _receiveSamples == null)
             {
-                _fallback.Process(buffer, offset, count, channels);
+                // Clean passthrough is preferable to the metallic SMB fallback.
                 return;
             }
 
@@ -77,10 +81,27 @@ namespace VoiceChanger.DSP.Effects
                 for (int i = 0; i < samples; i++) _output.Enqueue(_received[i]);
             }
 
-            // Silence is preferable during initial latency. Mixing dry samples into
-            // processed output creates comb filtering and the characteristic metallic tone.
+            // SoundTouch emits frames in batches. Build a reserve before playback so
+            // callback boundaries cannot introduce periodic gaps (the "kerokero" sound).
+            if (!_outputPrimed)
+            {
+                if (_output.Count < Math.Max(_prebufferSamples, count * 2))
+                {
+                    Array.Clear(buffer, offset, count);
+                    return;
+                }
+                _outputPrimed = true;
+            }
+
+            if (_output.Count < count)
+            {
+                _outputPrimed = false;
+                Array.Clear(buffer, offset, count);
+                return;
+            }
+
             for (int i = 0; i < count; i++)
-                buffer[offset + i] = _output.Count > 0 ? _output.Dequeue() : 0f;
+                buffer[offset + i] = _output.Dequeue();
         }
 
         private bool TryInitSoundTouch()
@@ -91,6 +112,7 @@ namespace VoiceChanger.DSP.Effects
                 Assembly? assembly = TryLoadAssembly("SoundTouch.Net");
                 Type? genericSoundTouch = assembly?.GetType("SoundTouch.SoundTouch`2");
                 Type? genericArrayPtr = assembly?.GetType("SoundTouch.Utility.ArrayPtr`1");
+                _settingIdType = assembly?.GetType("SoundTouch.SettingId");
                 if (genericSoundTouch == null || genericArrayPtr == null) return false;
 
                 Type soundTouchType = genericSoundTouch.MakeGenericType(typeof(float), typeof(double));
@@ -101,6 +123,8 @@ namespace VoiceChanger.DSP.Effects
                 _receiveSamples = soundTouchType.GetMethod("ReceiveSamples", new[] { _arrayPtrType, typeof(int) });
                 _arrayToPtr = _arrayPtrType.GetMethod("op_Implicit", BindingFlags.Public | BindingFlags.Static,
                     null, new[] { typeof(float[]) }, null);
+                if (_settingIdType != null)
+                    _setSetting = soundTouchType.GetMethod("SetSetting", new[] { _settingIdType, typeof(int) });
 
                 if (_soundTouch == null || _setPitchSemiTones == null || _putSamples == null ||
                     _receiveSamples == null || _arrayToPtr == null)
@@ -120,6 +144,25 @@ namespace VoiceChanger.DSP.Effects
         private void SetSoundTouchPitch(float semitones)
         {
             _setPitchSemiTones?.Invoke(_soundTouch, new object[] { (double)semitones });
+        }
+
+        private void ConfigureForVoice()
+        {
+            // Shorter sequences follow speech transients more naturally. Quick seek is
+            // disabled and the anti-alias filter is lengthened in favor of quality.
+            SetSetting("UseAntiAliasFilter", 1);
+            SetSetting("AntiAliasFilterLength", 64);
+            SetSetting("UseQuickSeek", 0);
+            SetSetting("SequenceDurationMs", 40);
+            SetSetting("SeekWindowDurationMs", 15);
+            SetSetting("OverlapDurationMs", 8);
+        }
+
+        private void SetSetting(string name, int value)
+        {
+            if (_soundTouch == null || _setSetting == null || _settingIdType == null) return;
+            object setting = Enum.Parse(_settingIdType, name);
+            _setSetting.Invoke(_soundTouch, new[] { setting, (object)value });
         }
 
         private void Invoke(string methodName, params object[] args)

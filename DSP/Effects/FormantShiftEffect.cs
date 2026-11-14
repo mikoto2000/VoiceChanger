@@ -25,9 +25,13 @@ namespace VoiceChanger.DSP.Effects
         private void UpdateFilters()
         {
             float scale = (float)Math.Pow(2.0, _shift * 0.5); // ~±1: ~±1/2 octave
-            _f1.SetPeaking(_sampleRate, 700f * scale, 1.2f, 4f);
-            _f2.SetPeaking(_sampleRate, 1200f * scale, 1.2f, 3f);
-            _f3.SetPeaking(_sampleRate, 3000f * scale, 1.5f, 2f);
+            float strength = Math.Abs(_shift);
+
+            // Broad, level-dependent shaping avoids the narrow resonances that make
+            // speech sound nasal or metallic. This is timbre shaping, not pitch shifting.
+            _f1.SetPeaking(_sampleRate, 700f * scale, 0.75f, 2.5f * strength);
+            _f2.SetPeaking(_sampleRate, 1200f * scale, 0.85f, 2.0f * strength);
+            _f3.SetPeaking(_sampleRate, 3000f * scale, 1.0f, 1.5f * strength);
         }
 
         public void Process(float[] buffer, int offset, int count, int channels)
